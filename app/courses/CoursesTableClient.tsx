@@ -55,6 +55,7 @@ export default function CoursesTableClient({
     if (v === "ALL") params.delete("format");
     else params.set("format", v);
 
+    params.delete("page");
     // เปลี่ยน URL แล้วให้ Server Component โหลดใหม่ตาม query
     router.replace(`${pathname}?${params.toString()}`);
   };
