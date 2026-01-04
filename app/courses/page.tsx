@@ -6,30 +6,36 @@ import { Button } from "@/components/ui/button";
 import CoursesTableClient from "@/app/courses/CoursesTableClient";
 import CoursesPaginationClient from "@/app/courses/CoursesPaginationClient";
 
-const FormatQuerySchema = z.enum(["ALL", "ONLINE", "OFFLINE", "HYBRID"]);
-type FormatQuery = z.infer<typeof FormatQuerySchema>;
+const QuerySchema = z.object({
+  format: z.enum(["ALL", "ONLINE", "OFFLINE", "HYBRID"]).catch("ALL"),
+  page: z.coerce.number().int().min(1).catch(1),
+  q: z.string().max(100).optional(),
+});
 
-const PageSchema = z.coerce.number().int().min(1).catch(1);
+type FormatQuery = z.infer<typeof QuerySchema>["format"];
 
-function parseFormat(format: unknown): FormatQuery {
-  const parsed = FormatQuerySchema.safeParse(format);
-  return parsed.success ? parsed.data : "ALL";
-}
-
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 10;
 
 export default async function CoursesPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ format?: string; page?: string }>;
+  searchParams?: Promise<{ format?: string; page?: string; q?: string }>;
 }) {
   const sp = await searchParams;
 
-  const currentFormat = parseFormat(sp?.format);
-  const page = PageSchema.parse(sp?.page);
+  const parsed = QuerySchema.parse({
+    format: sp?.format,
+    page: sp?.page,
+    q: sp?.q,
+  });
+
+  const currentFormat: FormatQuery = parsed.format;
+  const page = parsed.page;
+  const q = parsed.q?.trim() || "";
 
   const { total, items } = await dbListCoursesPaged({
     format: currentFormat === "ALL" ? undefined : currentFormat,
+    q: q ? q : undefined,
     page,
     pageSize: PAGE_SIZE,
   });
@@ -51,7 +57,11 @@ export default async function CoursesPage({
         </Button>
       </div>
 
-      <CoursesTableClient courses={safeCourses} currentFormat={currentFormat} />
+      <CoursesTableClient
+        courses={safeCourses}
+        currentFormat={currentFormat}
+        q={q}
+      />
 
       <CoursesPaginationClient page={page} totalPages={totalPages} />
     </div>
