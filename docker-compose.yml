@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: cats_course_pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cats
+      POSTGRES_PASSWORD: cats_password
+      POSTGRES_DB: cats_course_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - cats_course_pgdata:/var/lib/postgresql/data
+
+volumes:
+  cats_course_pgdata:
